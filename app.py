@@ -33,13 +33,85 @@ COLOR_PRINCIPAL = "#1B5E8C"
 # ==============================================================================
 # 2. CARGA DE ARTEFACTOS (en caché: se leen una sola vez)
 # ==============================================================================
+COLUMNAS = [
+    "edad", "sexo", "tipo_dolor_pecho", "presion_reposo", "colesterol",
+    "azucar_ayunas", "electro_reposo", "frecuencia_max", "angina_ejercicio",
+    "depresion_st", "pendiente_st", "num_vasos_principales", "talasemia", "objetivo",
+]
+
+
+def reentrenar_pipeline(hiperparametros):
+    """
+    Reconstruye el pipeline con EXACTAMENTE la misma configuración del notebook
+    (misma partición, preprocesamiento e hiperparámetros, random_state=42).
+    Se usa solo si el .pkl no puede abrirse porque el servidor tiene una versión
+    de scikit-learn distinta a la de Colab (los .pkl no son portables entre versiones).
+    """
+    from sklearn.compose import ColumnTransformer
+    from sklearn.impute import SimpleImputer
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.model_selection import train_test_split
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
+    df = pd.read_csv("processed.cleveland.data", names=COLUMNAS, na_values="?")
+    df["objetivo"] = (df["objetivo"] > 0).astype(int)
+    X, y = df.drop("objetivo", axis=1), df["objetivo"]
+    X_train, _, y_train, _ = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y)
+
+    continuas = ["edad", "presion_reposo", "colesterol", "frecuencia_max", "depresion_st"]
+    ordinales = ["num_vasos_principales"]
+    binarias = ["sexo", "azucar_ayunas", "angina_ejercicio"]
+    nominales = ["tipo_dolor_pecho", "electro_reposo", "pendiente_st", "talasemia"]
+
+    preprocesador = ColumnTransformer(transformers=[
+        ("cont", Pipeline([("imputar", SimpleImputer(strategy="median")),
+                           ("escalar", StandardScaler())]), continuas),
+        ("ord", Pipeline([("imputar", SimpleImputer(strategy="most_frequent")),
+                          ("escalar", StandardScaler())]), ordinales),
+        ("bin", "passthrough", binarias),
+        ("nom", Pipeline([("imputar", SimpleImputer(strategy="most_frequent")),
+                          ("onehot", OneHotEncoder(handle_unknown="ignore"))]), nominales),
+    ])
+    pipeline = Pipeline([
+        ("prep", preprocesador),
+        ("clf", LogisticRegression(C=hiperparametros["C"], max_iter=1000, random_state=42)),
+    ])
+    return pipeline.fit(X_train, y_train)
+
+
+def coeficientes_del_pipeline(pipeline):
+    """Devuelve {característica: coeficiente} con los mismos nombres del notebook."""
+    nombres = [n.split("__", 1)[1] for n in
+               pipeline.named_steps["prep"].get_feature_names_out().astype(str)]
+    return dict(zip(nombres, pipeline.named_steps["clf"].coef_[0]))
+
+
 @st.cache_resource
-def cargar_modelo():
-    """Carga el pipeline entrenado. Devuelve None si el archivo no existe."""
+def cargar_modelo(hiperparametros, coeficientes_notebook):
+    """
+    1) Intenta abrir el pipeline exportado desde Colab (modelo_cardiaco.pkl).
+    2) Si la versión de scikit-learn del servidor no permite abrirlo, lo reconstruye
+       con la misma configuración y VERIFICA que sus coeficientes coincidan con los
+       del notebook (metricas_modelo.json). Si no coinciden, no se usa.
+    Devuelve (modelo, origen) o (None, mensaje_de_error).
+    """
     try:
-        return joblib.load("modelo_cardiaco.pkl")
-    except FileNotFoundError:
-        return None
+        return joblib.load("modelo_cardiaco.pkl"), "pkl"
+    except Exception:
+        pass
+
+    try:
+        modelo = reentrenar_pipeline(hiperparametros)
+    except Exception as error:
+        return None, f"No fue posible reconstruir el modelo: {error}"
+
+    coef_app = coeficientes_del_pipeline(modelo)
+    iguales = all(abs(coef_app[k] - v) < 1e-3 for k, v in coeficientes_notebook.items())
+    if not iguales:
+        return None, "El modelo reconstruido no coincide con el del notebook."
+    return modelo, "reconstruido"
 
 
 @st.cache_data
@@ -52,14 +124,14 @@ def cargar_metricas():
         return None
 
 
-modelo = cargar_modelo()
 evidencias = cargar_metricas()
+if evidencias is None:
+    st.error("⚠️ No se encontró 'metricas_modelo.json' en la misma carpeta que 'app.py'.")
+    st.stop()
 
-if modelo is None or evidencias is None:
-    st.error(
-        "⚠️ No se encontraron 'modelo_cardiaco.pkl' y/o 'metricas_modelo.json'. "
-        "Ambos archivos deben estar en la misma carpeta que 'app.py'."
-    )
+modelo, ORIGEN_MODELO = cargar_modelo(evidencias["hiperparametros"], evidencias["coeficientes"])
+if modelo is None:
+    st.error(f"⚠️ {ORIGEN_MODELO}")
     st.stop()
 
 UMBRAL = evidencias["umbral"]
@@ -343,7 +415,10 @@ conjunto de prueba.
 relaciones encontradas son asociaciones, no causas. Herramienta académica: no reemplaza el
 criterio médico.
 
-**Versión de scikit-learn del modelo:** {evidencias['version_sklearn']}
+**Versión de scikit-learn del modelo:** {evidencias['version_sklearn']}.
+{"Modelo cargado desde `modelo_cardiaco.pkl`." if ORIGEN_MODELO == "pkl" else
+ "El servidor usa otra versión de scikit-learn, por lo que el modelo se reconstruyó con la misma "
+ "configuración del notebook y se verificó que sus coeficientes coinciden con los exportados."}
 
 **Referencia del dataset:** Janosi, A., Steinbrunn, W., Pfisterer, M., & Detrano, R. (1988).
 *Heart disease* [Conjunto de datos]. UCI Machine Learning Repository.

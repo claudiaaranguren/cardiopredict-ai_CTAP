@@ -9,6 +9,7 @@ Arquitectura:
 """
 
 import json
+import os
 
 import joblib
 import matplotlib.pyplot as plt
@@ -24,6 +25,18 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# ------------------------------------------------------------------------------
+# ENLACES DEL PROYECTO: pegue aquí cada enlace cuando lo tenga (entre comillas).
+# Si un enlace queda vacío (""), la app muestra "Disponible pronto".
+# ------------------------------------------------------------------------------
+ENLACES = {
+    "📓 Notebook (Google Colab)": "https://colab.research.google.com/drive/1Xge3m_tg7hq6MR-TQzmT5tycTc0Kv-MM?usp=sharing",
+    "💻 Repositorio (GitHub)": "https://github.com/claudiaaranguren/cardiopredict-ai_CTAP",
+    "🎥 Video de sustentación": "",
+    "📄 Póster (infografía PDF)": "",
+}
+ARCHIVO_POSTER = "infografia.png"   # imagen del póster en el repositorio (opcional)
 
 COLOR_RIESGO = "#e74c3c"
 COLOR_SANO = "#2ecc71"
@@ -140,6 +153,19 @@ TEST = evidencias["metricas_test"]
 RANGOS = evidencias["rangos_entrenamiento"]
 
 
+def nota(texto):
+    """Texto explicativo en tamaño y color normales (más legible que st.caption)."""
+    st.markdown(texto)
+
+
+def tabla_md(encabezados, filas):
+    """Tabla en markdown: hereda el color de texto del tema y se lee con claridad."""
+    lineas = ["| " + " | ".join(encabezados) + " |",
+              "|" + "|".join([":---"] + [":---:"] * (len(encabezados) - 1)) + "|"]
+    lineas += ["| " + " | ".join(str(c) for c in fila) + " |" for fila in filas]
+    st.markdown("\n".join(lineas))
+
+
 def mostrar_figura(fig):
     """Muestra un gráfico centrado y con ancho moderado (evita que ocupe toda la pantalla)."""
     _, centro, _ = st.columns([1, 2, 1])
@@ -157,7 +183,7 @@ def pct(valor):
 # 3. BARRA LATERAL: DATOS DEL PACIENTE
 # ==============================================================================
 st.sidebar.header("📋 Parámetros Clínicos del Paciente")
-st.sidebar.caption("Ingrese los valores observados en la consulta.")
+st.sidebar.markdown("Ingrese los valores observados en la consulta.")
 
 
 def recopilar_entradas():
@@ -259,6 +285,21 @@ st.warning(
     "confirmatorios. **No reemplaza el diagnóstico de un profesional de la salud.**"
 )
 
+st.subheader("📌 Acceso al proyecto")
+columnas_enlaces = st.columns(len(ENLACES))
+for columna, (nombre, url) in zip(columnas_enlaces, ENLACES.items()):
+    with columna:
+        if url:
+            st.link_button(nombre, url)
+        else:
+            st.markdown(f"{nombre}  \n*Disponible pronto*")
+
+if os.path.exists(ARCHIVO_POSTER):
+    with st.expander("🖼️ Ver póster del proyecto"):
+        st.image(ARCHIVO_POSTER)
+
+st.divider()
+
 # ==============================================================================
 # 5. EVALUACIÓN DEL PACIENTE
 # ==============================================================================
@@ -268,7 +309,27 @@ col_datos, col_resultado = st.columns([1.2, 1])
 
 with col_datos:
     st.markdown("**Mediciones ingresadas** (panel lateral)")
-    st.dataframe(datos_paciente.T.rename(columns={0: "Valor"}))
+    d = datos_paciente.iloc[0]
+    si_no = {0.0: "No", 1.0: "Sí"}
+    tabla_md(["Variable", "Valor"], [
+        ["Edad", f"{d['edad']:g} años"],
+        ["Sexo", "Masculino" if d["sexo"] == 1.0 else "Femenino"],
+        ["Tipo de dolor torácico", {1.0: "Angina típica", 2.0: "Angina atípica",
+                                    3.0: "Dolor no anginoso", 4.0: "Asintomático"}[d["tipo_dolor_pecho"]]],
+        ["Presión arterial en reposo", f"{d['presion_reposo']:g} mm Hg"],
+        ["Colesterol sérico", f"{d['colesterol']:g} mg/dl"],
+        ["Glucemia en ayunas > 120 mg/dl", si_no[d["azucar_ayunas"]]],
+        ["Electrocardiograma en reposo", {0.0: "Normal", 1.0: "Anomalía ST-T",
+                                          2.0: "Hipertrofia ventricular izq."}[d["electro_reposo"]]],
+        ["Frecuencia cardíaca máxima", f"{d['frecuencia_max']:g} lpm"],
+        ["Angina inducida por ejercicio", si_no[d["angina_ejercicio"]]],
+        ["Depresión del segmento ST", f"{d['depresion_st']:g}"],
+        ["Pendiente del segmento ST", {1.0: "Ascendente", 2.0: "Plana",
+                                       3.0: "Descendente"}[d["pendiente_st"]]],
+        ["Vasos principales (fluoroscopia)", f"{d['num_vasos_principales']:g}"],
+        ["Prueba de perfusión (talasemia)", {3.0: "Normal", 6.0: "Defecto fijo",
+                                             7.0: "Defecto reversible"}[d["talasemia"]]],
+    ])
     analizar = st.button("Analizar riesgo cardíaco", type="primary")
 
 with col_resultado:
@@ -284,7 +345,7 @@ with col_resultado:
 
         st.metric("Probabilidad estimada de cardiopatía", pct(probabilidad))
         st.progress(min(max(probabilidad, 0.0), 1.0))
-        st.caption(
+        nota(
             f"Umbral de decisión: **{pct(UMBRAL)}**. Se eligió bajo (en lugar de 50%) para "
             f"priorizar la detección de enfermos: en validación cruzada detecta ≈"
             f"{pct(evidencias['umbral_cv']['recall'])} de los pacientes con cardiopatía, "
@@ -314,7 +375,7 @@ st.divider()
 # 6. DESEMPEÑO DEL MODELO (todo se lee del JSON)
 # ==============================================================================
 st.subheader("📈 Desempeño del modelo")
-st.caption(
+nota(
     f"Modelo: **{evidencias['modelo']}** (C = {evidencias['hiperparametros']['C']}) · "
     f"Entrenamiento: {evidencias['n_entrenamiento']} pacientes · "
     f"Prueba: {evidencias['n_prueba']} pacientes"
@@ -338,7 +399,7 @@ t1.metric("Recall (sensibilidad)", f"{TEST['Recall (sensibilidad)']:.3f}")
 t2.metric("Especificidad", f"{TEST['Especificidad']:.3f}")
 t3.metric("Precision", f"{TEST['Precision']:.3f}")
 t4.metric("ROC-AUC", f"{TEST['ROC-AUC']:.3f}")
-st.caption(
+nota(
     "Con solo 28 pacientes enfermos en la prueba, un Recall de 1.000 tiene un intervalo de "
     "confianza al 95% aproximado de 0.88 a 1.00: no implica que el modelo nunca falle."
 )
@@ -357,7 +418,7 @@ with tab_coef:
     ax.set_title("Coeficientes de la Regresión Logística")
     fig.tight_layout()
     mostrar_figura(fig)
-    st.caption(
+    nota(
         "Rojo: aumenta el riesgo; verde: lo reduce, manteniendo constantes las demás variables. "
         "Las variables continuas están escaladas (efecto por desviación estándar) y las categorías "
         "One-Hot se comparan con las demás categorías de su misma variable. Son asociaciones, no causas."
@@ -384,24 +445,24 @@ with tab_roc:
 with tab_matriz:
     vn, fp = evidencias["matriz_confusion"][0]
     fn, vp = evidencias["matriz_confusion"][1]
-    tabla = pd.DataFrame(
-        [[vn, fp], [fn, vp]],
-        index=["Real: Sano", "Real: Cardiopatía"],
-        columns=["Predicho: Sano", "Predicho: Cardiopatía"],
-    )
-    st.table(tabla)
+    tabla_md(["", "Predicho: Sano", "Predicho: Cardiopatía"], [
+        ["**Real: Sano**", vn, fp],
+        ["**Real: Cardiopatía**", fn, vp],
+    ])
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Verdaderos negativos", vn)
     m2.metric("Falsos positivos", fp)
     m3.metric("Falsos negativos", fn)
     m4.metric("Verdaderos positivos", vp)
-    st.caption(f"Conjunto de prueba ({evidencias['n_prueba']} pacientes), umbral {UMBRAL}.")
+    nota(f"Conjunto de prueba ({evidencias['n_prueba']} pacientes), umbral {UMBRAL}.")
 
 with tab_comp:
-    comparacion = (pd.Series(evidencias["comparacion_modelos_cv"], name="ROC-AUC (validación cruzada)")
-                   .sort_values(ascending=False).map(lambda v: f"{v:.3f}"))
-    st.table(comparacion.to_frame())
-    st.caption(
+    ranking = sorted(evidencias["comparacion_modelos_cv"].items(), key=lambda kv: -kv[1])
+    tabla_md(["Modelo", "ROC-AUC (validación cruzada)"], [
+        [f"**{nombre}** ✅ seleccionado" if nombre == evidencias["modelo"] else nombre, f"{valor:.3f}"]
+        for nombre, valor in ranking
+    ])
+    nota(
         "Criterio de selección definido antes de experimentar: mayor ROC-AUC medio en validación "
         "cruzada. Las diferencias son pequeñas; ante el empate se prefirió el modelo más simple e "
         "interpretable, que además mostró el menor sobreajuste."

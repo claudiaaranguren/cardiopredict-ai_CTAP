@@ -140,6 +140,14 @@ TEST = evidencias["metricas_test"]
 RANGOS = evidencias["rangos_entrenamiento"]
 
 
+def mostrar_figura(fig):
+    """Muestra un gráfico centrado y con ancho moderado (evita que ocupe toda la pantalla)."""
+    _, centro, _ = st.columns([1, 2, 1])
+    with centro:
+        st.pyplot(fig)
+    plt.close(fig)
+
+
 def pct(valor):
     """Convierte una proporción (0-1) en texto de porcentaje."""
     return f"{valor * 100:.1f}%"
@@ -314,10 +322,15 @@ st.caption(
 
 st.markdown("**Validación cruzada (5 particiones, umbral 0.5)** — estimación más representativa")
 c1, c2, c3, c4 = st.columns(4)
-c1.metric("ROC-AUC", f"{CV['roc_auc']['media']:.3f}", f"± {CV['roc_auc']['desviacion']:.3f}", delta_color="off")
-c2.metric("Accuracy", f"{CV['accuracy']['media']:.3f}", f"± {CV['accuracy']['desviacion']:.3f}", delta_color="off")
-c3.metric("Recall", f"{CV['recall']['media']:.3f}", f"± {CV['recall']['desviacion']:.3f}", delta_color="off")
-c4.metric("Precision", f"{CV['precision']['media']:.3f}", f"± {CV['precision']['desviacion']:.3f}", delta_color="off")
+def media_desv(nombre):
+    """Texto 'media ± desviación' sin flechas (no es una variación sino una dispersión)."""
+    return f"{CV[nombre]['media']:.3f} ± {CV[nombre]['desviacion']:.3f}"
+
+
+c1.metric("ROC-AUC", media_desv("roc_auc"))
+c2.metric("Accuracy", media_desv("accuracy"))
+c3.metric("Recall", media_desv("recall"))
+c4.metric("Precision", media_desv("precision"))
 
 st.markdown(f"**Conjunto de prueba (umbral {UMBRAL})** — evaluación única sobre pacientes no vistos")
 t1, t2, t3, t4 = st.columns(4)
@@ -343,8 +356,7 @@ with tab_coef:
     ax.set_xlabel("Coeficiente (log-odds)   ← reduce el riesgo | aumenta el riesgo →")
     ax.set_title("Coeficientes de la Regresión Logística")
     fig.tight_layout()
-    st.pyplot(fig)
-    plt.close(fig)
+    mostrar_figura(fig)
     st.caption(
         "Rojo: aumenta el riesgo; verde: lo reduce, manteniendo constantes las demás variables. "
         "Las variables continuas están escaladas (efecto por desviación estándar) y las categorías "
@@ -367,8 +379,7 @@ with tab_roc:
     ax.legend(loc="lower right")
     ax.grid(True)
     fig.tight_layout()
-    st.pyplot(fig)
-    plt.close(fig)
+    mostrar_figura(fig)
 
 with tab_matriz:
     vn, fp = evidencias["matriz_confusion"][0]
@@ -388,7 +399,7 @@ with tab_matriz:
 
 with tab_comp:
     comparacion = (pd.Series(evidencias["comparacion_modelos_cv"], name="ROC-AUC (validación cruzada)")
-                   .sort_values(ascending=False).round(3))
+                   .sort_values(ascending=False).map(lambda v: f"{v:.3f}"))
     st.table(comparacion.to_frame())
     st.caption(
         "Criterio de selección definido antes de experimentar: mayor ROC-AUC medio en validación "

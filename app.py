@@ -38,9 +38,43 @@ ENLACES = {
 }
 ARCHIVO_POSTER = "infografia.png"   # imagen del póster en el repositorio (opcional)
 
-COLOR_RIESGO = "#e74c3c"
-COLOR_SANO = "#2ecc71"
-COLOR_PRINCIPAL = "#1B5E8C"
+# Paleta sobria de salud: azules y verde azulado clínico; coral solo para alertas.
+MARINO = "#0B3C5D"
+AZUL = "#1B6CA8"
+TEAL = "#0B7A6B"
+VERDE = "#26784A"
+CORAL = "#C53030"
+AMBAR = "#9C5D06"
+PURPURA = "#5B4B8A"
+COLOR_RIESGO = CORAL
+COLOR_SANO = VERDE
+COLOR_PRINCIPAL = AZUL
+
+ESTILOS = f"""
+<style>
+html {{ font-size: 18px; }}
+.tarjeta {{ border-radius: 16px; padding: 18px 14px; color: #FFFFFF; text-align: center;
+           box-shadow: 0 6px 16px rgba(11, 60, 93, 0.22); margin-bottom: 12px; }}
+.tarjeta .etq {{ font-size: 0.95rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }}
+.tarjeta .val {{ font-size: 2.3rem; font-weight: 800; line-height: 1.15; margin: 6px 0 4px; }}
+.tarjeta .det {{ font-size: 0.95rem; }}
+.titulo {{ background: linear-gradient(90deg, {MARINO}, {AZUL}); color: #FFFFFF; padding: 12px 20px;
+          border-radius: 12px; border-left: 10px solid {TEAL}; font-size: 1.45rem; font-weight: 800;
+          margin: 26px 0 16px; }}
+.banner {{ border-radius: 16px; padding: 20px; color: #FFFFFF; font-size: 1.45rem; font-weight: 800;
+          text-align: center; margin-bottom: 14px; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18); }}
+.enlace {{ display: block; text-align: center; padding: 14px 10px; border-radius: 14px; color: #FFFFFF !important;
+          text-decoration: none !important; font-weight: 700; font-size: 1.05rem;
+          box-shadow: 0 4px 12px rgba(11, 60, 93, 0.2); }}
+.enlace:hover {{ filter: brightness(1.12); }}
+.enlace.inactivo {{ background: #66757F; cursor: default; }}
+.aviso {{ background: #FFF4E0; border-left: 8px solid {AMBAR}; color: #4A3200; padding: 14px 18px;
+         border-radius: 10px; font-size: 1.05rem; }}
+button[kind="primary"] {{ background: {TEAL} !important; border-color: {TEAL} !important;
+                          font-size: 1.15rem !important; font-weight: 700 !important; }}
+.stTabs [data-baseweb="tab"] p {{ font-size: 1.1rem; font-weight: 700; }}
+</style>
+"""
 
 
 # ==============================================================================
@@ -166,6 +200,18 @@ def tabla_md(encabezados, filas):
     st.markdown("\n".join(lineas))
 
 
+def tarjeta(etiqueta, valor, color, detalle=""):
+    """Tarjeta de color intenso con número grande en blanco."""
+    det = f'<div class="det">{detalle}</div>' if detalle else ""
+    st.markdown(f'<div class="tarjeta" style="background:{color};"><div class="etq">{etiqueta}</div>'
+                f'<div class="val">{valor}</div>{det}</div>', unsafe_allow_html=True)
+
+
+def titulo_seccion(texto):
+    """Título de sección en franja azul con borde verde azulado."""
+    st.markdown(f'<div class="titulo">{texto}</div>', unsafe_allow_html=True)
+
+
 def mostrar_figura(fig):
     """Muestra un gráfico centrado y con ancho moderado (evita que ocupe toda la pantalla)."""
     _, centro, _ = st.columns([1, 2, 1])
@@ -182,6 +228,7 @@ def pct(valor):
 # ==============================================================================
 # 3. BARRA LATERAL: DATOS DEL PACIENTE
 # ==============================================================================
+st.markdown(ESTILOS, unsafe_allow_html=True)
 st.sidebar.header("📋 Parámetros Clínicos del Paciente")
 st.sidebar.markdown("Ingrese los valores observados en la consulta.")
 
@@ -268,9 +315,9 @@ def valores_fuera_de_rango(datos):
 st.markdown(f"""
 <div style="background: linear-gradient(90deg,#0B3C5D,{COLOR_PRINCIPAL});
             padding:25px; border-radius:12px; color:white; text-align:center;">
-  <h1 style="color:white; margin-bottom:0;">🩺 CardioPredict AI</h1>
+  <h1 style="color:white; margin-bottom:0; font-size:2.8rem;">🩺 CardioPredict AI</h1>
   <h3 style="color:white; margin-top:4px;">Tamizaje de riesgo de cardiopatía con Machine Learning clásico</h3>
-  <p style="font-size:16px; margin-bottom:0;">
+  <p style="font-size:1.05rem; margin-bottom:0; line-height:1.6;">
     Especialización en Inteligencia Artificial – CUN · Proyecto ACA 1 – Aprendizaje Automático<br>
     <b>Integrantes:</b> Claudia Teresa Aranguren Peña · Juan Sebastián Jaramillo ·
     Weimar Rolando Ramírez · Alexandra Rippe Abril · Jayr Antonio Fandiño<br>
@@ -280,19 +327,23 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 st.write("")
-st.warning(
-    "**Herramienta académica de tamizaje.** Estima el riesgo para priorizar exámenes "
-    "confirmatorios. **No reemplaza el diagnóstico de un profesional de la salud.**"
+st.markdown(
+    '<div class="aviso"><b>⚕️ Herramienta académica de tamizaje.</b> Estima el riesgo para priorizar '
+    'exámenes confirmatorios. <b>No reemplaza el diagnóstico de un profesional de la salud.</b></div>',
+    unsafe_allow_html=True,
 )
 
-st.subheader("📌 Acceso al proyecto")
+titulo_seccion("📌 Acceso al proyecto")
+colores_enlaces = [AZUL, MARINO, TEAL, PURPURA]
 columnas_enlaces = st.columns(len(ENLACES))
-for columna, (nombre, url) in zip(columnas_enlaces, ENLACES.items()):
+for columna, color, (nombre, url) in zip(columnas_enlaces, colores_enlaces, ENLACES.items()):
     with columna:
         if url:
-            st.link_button(nombre, url)
+            st.markdown(f'<a class="enlace" style="background:{color};" href="{url}" target="_blank">'
+                        f'{nombre}</a>', unsafe_allow_html=True)
         else:
-            st.markdown(f"{nombre}  \n*Disponible pronto*")
+            st.markdown(f'<span class="enlace inactivo">{nombre}<br>'
+                        f'<small>Disponible pronto</small></span>', unsafe_allow_html=True)
 
 if os.path.exists(ARCHIVO_POSTER):
     with st.expander("🖼️ Ver póster del proyecto"):
@@ -303,7 +354,7 @@ st.divider()
 # ==============================================================================
 # 5. EVALUACIÓN DEL PACIENTE
 # ==============================================================================
-st.subheader("🔍 Evaluación del paciente")
+titulo_seccion("🔍 Evaluación del paciente")
 
 col_datos, col_resultado = st.columns([1.2, 1])
 
@@ -339,11 +390,16 @@ with col_resultado:
         positivo = probabilidad >= UMBRAL
 
         if positivo:
-            st.error("### ⚠️ Tamizaje POSITIVO: remitir a exámenes confirmatorios")
+            st.markdown(f'<div class="banner" style="background:{CORAL};">⚠️ Tamizaje POSITIVO<br>'
+                        f'<span style="font-size:1.1rem;">Remitir a exámenes confirmatorios</span></div>',
+                        unsafe_allow_html=True)
         else:
-            st.success("### ✅ Tamizaje NEGATIVO: riesgo bajo según el modelo")
+            st.markdown(f'<div class="banner" style="background:{VERDE};">✅ Tamizaje NEGATIVO<br>'
+                        f'<span style="font-size:1.1rem;">Riesgo bajo según el modelo</span></div>',
+                        unsafe_allow_html=True)
 
-        st.metric("Probabilidad estimada de cardiopatía", pct(probabilidad))
+        tarjeta("Probabilidad estimada de cardiopatía", pct(probabilidad),
+                CORAL if positivo else VERDE, f"Umbral de decisión: {pct(UMBRAL)}")
         st.progress(min(max(probabilidad, 0.0), 1.0))
         nota(
             f"Umbral de decisión: **{pct(UMBRAL)}**. Se eligió bajo (en lugar de 50%) para "
@@ -363,7 +419,7 @@ with col_resultado:
         avisos = valores_fuera_de_rango(datos_paciente)
         if avisos:
             st.warning(
-                "Algunos valores están fuera del rango observado en el entrenamiento; "
+                "⚠️ Algunos valores están fuera del rango observado en el entrenamiento; "
                 "la predicción es menos confiable:\n\n- " + "\n- ".join(avisos)
             )
     else:
@@ -374,7 +430,7 @@ st.divider()
 # ==============================================================================
 # 6. DESEMPEÑO DEL MODELO (todo se lee del JSON)
 # ==============================================================================
-st.subheader("📈 Desempeño del modelo")
+titulo_seccion("📈 Desempeño del modelo")
 nota(
     f"Modelo: **{evidencias['modelo']}** (C = {evidencias['hiperparametros']['C']}) · "
     f"Entrenamiento: {evidencias['n_entrenamiento']} pacientes · "
@@ -383,22 +439,18 @@ nota(
 
 st.markdown("**Validación cruzada (5 particiones, umbral 0.5)** — estimación más representativa")
 c1, c2, c3, c4 = st.columns(4)
-def media_desv(nombre):
-    """Texto 'media ± desviación' sin flechas (no es una variación sino una dispersión)."""
-    return f"{CV[nombre]['media']:.3f} ± {CV[nombre]['desviacion']:.3f}"
-
-
-c1.metric("ROC-AUC", media_desv("roc_auc"))
-c2.metric("Accuracy", media_desv("accuracy"))
-c3.metric("Recall", media_desv("recall"))
-c4.metric("Precision", media_desv("precision"))
+for col, nombre, etiqueta, color in [(c1, "roc_auc", "ROC-AUC", MARINO), (c2, "accuracy", "Accuracy", AZUL),
+                                    (c3, "recall", "Recall", TEAL), (c4, "precision", "Precision", PURPURA)]:
+    with col:
+        tarjeta(etiqueta, f"{CV[nombre]['media']:.3f}", color, f"± {CV[nombre]['desviacion']:.3f}")
 
 st.markdown(f"**Conjunto de prueba (umbral {UMBRAL})** — evaluación única sobre pacientes no vistos")
 t1, t2, t3, t4 = st.columns(4)
-t1.metric("Recall (sensibilidad)", f"{TEST['Recall (sensibilidad)']:.3f}")
-t2.metric("Especificidad", f"{TEST['Especificidad']:.3f}")
-t3.metric("Precision", f"{TEST['Precision']:.3f}")
-t4.metric("ROC-AUC", f"{TEST['ROC-AUC']:.3f}")
+for col, clave, etiqueta, color in [(t1, "Recall (sensibilidad)", "Recall", TEAL),
+                                   (t2, "Especificidad", "Especificidad", AZUL),
+                                   (t3, "Precision", "Precision", PURPURA), (t4, "ROC-AUC", "ROC-AUC", MARINO)]:
+    with col:
+        tarjeta(etiqueta, f"{TEST[clave]:.3f}", color)
 nota(
     "Con solo 28 pacientes enfermos en la prueba, un Recall de 1.000 tiene un intervalo de "
     "confianza al 95% aproximado de 0.88 a 1.00: no implica que el modelo nunca falle."
@@ -450,10 +502,10 @@ with tab_matriz:
         ["**Real: Cardiopatía**", fn, vp],
     ])
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Verdaderos negativos", vn)
-    m2.metric("Falsos positivos", fp)
-    m3.metric("Falsos negativos", fn)
-    m4.metric("Verdaderos positivos", vp)
+    for col, etiqueta, valor, color in [(m1, "Verdaderos negativos", vn, AZUL), (m2, "Falsos positivos", fp, AMBAR),
+                                        (m3, "Falsos negativos", fn, CORAL), (m4, "Verdaderos positivos", vp, VERDE)]:
+        with col:
+            tarjeta(etiqueta, valor, color)
     nota(f"Conjunto de prueba ({evidencias['n_prueba']} pacientes), umbral {UMBRAL}.")
 
 with tab_comp:

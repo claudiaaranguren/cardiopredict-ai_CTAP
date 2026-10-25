@@ -34,7 +34,7 @@ ENLACES = {
     "📓 Notebook (Google Colab)": "https://colab.research.google.com/drive/1Xge3m_tg7hq6MR-TQzmT5tycTc0Kv-MM?usp=sharing",
     "💻 Repositorio (GitHub)": "https://github.com/claudiaaranguren/cardiopredict-ai_CTAP",
     "🎥 Video de sustentación": "https://youtu.be/_dzIRgdEkh4",
-    "📄 Póster (infografía PDF)": "https://github.com/claudiaaranguren/cardiopredict-ai_CTAP/blob/main/poster_ACA1.pdf",
+    "📄 Póster (infografía PDF)": "https://github.com/claudiaaranguren/cardiopredict-ai_CTAP/blob/main/P%C3%B3ster_ACA_1_A3.pdf",
 }
 ARCHIVO_POSTER = "infografia.png"   # imagen del póster en el repositorio (opcional)
 

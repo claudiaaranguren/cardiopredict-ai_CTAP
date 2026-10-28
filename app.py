@@ -33,7 +33,7 @@ st.set_page_config(
 ENLACES = {
     "📓 Notebook (Google Colab)": "https://colab.research.google.com/drive/1Xge3m_tg7hq6MR-TQzmT5tycTc0Kv-MM?usp=sharing",
     "💻 Repositorio (GitHub)": "https://github.com/claudiaaranguren/cardiopredict-ai_CTAP",
-    "🎥 Video de sustentación": "https://youtu.be/_dzIRgdEkh4",
+    "🎥 Video de sustentación": "https://youtu.be/FbgWG-W6Ia4",
     "📄 Póster (infografía PDF)": "https://github.com/claudiaaranguren/cardiopredict-ai_CTAP/blob/main/P%C3%B3ster_ACA_1_A3.pdf",
 }
 ARCHIVO_POSTER = "infografia.png"   # imagen del póster en el repositorio (opcional)
@@ -319,6 +319,7 @@ st.markdown(f"""
   <h3 style="color:white; margin-top:4px;">Tamizaje de riesgo de cardiopatía con Machine Learning clásico</h3>
   <p style="font-size:1.05rem; margin-bottom:0; line-height:1.6;">
     Especialización en Inteligencia Artificial – CUN · Proyecto ACA 1 – Aprendizaje Automático<br>
+    <b>Curso:</b> APRENDIZAJE AUTOMÁTICO/54ES2/SEGUNDO BLOQUE/26ES4<br>
     <b>Autora:</b> Claudia Teresa Aranguren Peña<br>
     <b>Docente:</b> Dr. Hamilton Rivera Flor
   </p>

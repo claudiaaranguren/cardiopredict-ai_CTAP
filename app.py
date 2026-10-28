@@ -319,8 +319,7 @@ st.markdown(f"""
   <h3 style="color:white; margin-top:4px;">Tamizaje de riesgo de cardiopatía con Machine Learning clásico</h3>
   <p style="font-size:1.05rem; margin-bottom:0; line-height:1.6;">
     Especialización en Inteligencia Artificial – CUN · Proyecto ACA 1 – Aprendizaje Automático<br>
-    <b>Integrantes:</b> Claudia Teresa Aranguren Peña · Juan Sebastián Jaramillo ·
-    Weimar Rolando Ramírez · Alexandra Rippe Abril · Jayr Antonio Fandiño<br>
+    <b>Autora:</b> Claudia Teresa Aranguren Peña<br>
     <b>Docente:</b> Dr. Hamilton Rivera Flor
   </p>
 </div>

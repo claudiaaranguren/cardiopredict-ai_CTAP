@@ -9,7 +9,7 @@
 ## Enlaces
 
 - Aplicación (Streamlit Community Cloud): https://cardiopredict-ai-ctap.streamlit.app
-- Notebook (Google Colab): https://colab.research.google.com/drive/1jJ99E_SvkPgwk-gBJcjWdny5kLrIzjfc?usp=sharing
+- Notebook (Google Colab): https://colab.research.google.com/drive/1M5URiH0n_mBn9rKRlfk9g5zypr6Vlmij?usp=sharing
 - Video de sustentación: https://youtu.be/FbgWG-W6Ia4
 
 ## Qué hace

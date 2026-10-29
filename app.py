@@ -32,7 +32,7 @@ st.set_page_config(
 # Si un enlace queda vacío (""), la app muestra "Disponible pronto".
 # ------------------------------------------------------------------------------
 ENLACES = {
-    "📓 Notebook (Google Colab)": "https://colab.research.google.com/drive/1jJ99E_SvkPgwk-gBJcjWdny5kLrIzjfc?usp=sharing",
+    "📓 Notebook (Google Colab)": "https://colab.research.google.com/drive/1M5URiH0n_mBn9rKRlfk9g5zypr6Vlmij?usp=sharing",
     "💻 Repositorio (GitHub)": "https://github.com/claudiaaranguren/cardiopredict-ai_CTAP",
     "🎥 Video de sustentación": "https://youtu.be/FbgWG-W6Ia4",
     "📄 Póster (infografía PDF)": "https://github.com/claudiaaranguren/cardiopredict-ai_CTAP/blob/main/P%C3%B3ster_ACA_1_A3.pdf",

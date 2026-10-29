@@ -1,8 +1,10 @@
 # CardioPredict AI · Tamizaje de riesgo de cardiopatía
 
-Proyecto ACA 1 · Aprendizaje Automático · Especialización en Inteligencia Artificial (CUN)
-Curso: APRENDIZAJE AUTOMÁTICO/54ES2/SEGUNDO BLOQUE/26ES4 · Docente: Dr. Hamilton Rivera Flor
-Autora: Claudia Teresa Aranguren Peña
+**Proyecto ACA 1 · Aprendizaje Automático** · Especialización en Inteligencia Artificial (CUN)
+
+- **Autora:** Claudia Teresa Aranguren Peña
+- **Curso:** APRENDIZAJE AUTOMÁTICO/54ES2/SEGUNDO BLOQUE/26ES4
+- **Docente:** Dr. Hamilton Rivera Flor
 
 ## Enlaces
 

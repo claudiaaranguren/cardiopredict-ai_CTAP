@@ -428,7 +428,60 @@ with col_resultado:
 st.divider()
 
 # ==============================================================================
-# 6. DESEMPEÑO DEL MODELO (todo se lee del JSON)
+# 6. CONOCE LOS DATOS (EDA resumido: solo las gráficas que explican el dataset)
+# ==============================================================================
+@st.cache_data
+def cargar_datos():
+    """Lee el dataset original y traduce las categorías para las gráficas descriptivas."""
+    df = pd.read_csv("processed.cleveland.data", names=COLUMNAS, na_values="?")
+    df["Diagnóstico"] = (df["objetivo"] > 0).map({False: "Sano", True: "Cardiopatía"})
+    df["Tipo de dolor"] = df["tipo_dolor_pecho"].map(
+        {1: "Angina típica", 2: "Angina atípica", 3: "No anginoso", 4: "Asintomático"})
+    return df
+
+
+titulo_seccion("📊 Conoce los datos")
+datos = cargar_datos()
+nota(
+    f"UCI Heart Disease (Cleveland): **{len(datos)} pacientes** y 13 variables clínicas. "
+    "Estas gráficas describen el dataset completo; el modelo se entrenó solo con el 80 % de los pacientes."
+)
+g1, g2 = st.columns(2)
+with g1:
+    conteo = datos["Diagnóstico"].value_counts().reindex(["Sano", "Cardiopatía"])
+    fig, ax = plt.subplots(figsize=(5, 3.6))
+    barras = ax.bar(conteo.index, conteo.values, color=[COLOR_PRINCIPAL, COLOR_RIESGO])
+    ax.bar_label(barras, labels=[f"{v} ({v / len(datos):.0%})" for v in conteo.values], fontsize=11)
+    ax.set_ylabel("Pacientes")
+    ax.set_title("Diagnóstico: clases casi balanceadas")
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.set_ylim(0, conteo.max() * 1.18)
+    fig.tight_layout()
+    st.pyplot(fig)
+    plt.close(fig)
+with g2:
+    orden = ["Angina típica", "Angina atípica", "No anginoso", "Asintomático"]
+    tasa = (datos.groupby("Tipo de dolor")["Diagnóstico"].apply(lambda s: (s == "Cardiopatía").mean())
+            .reindex(orden))
+    fig, ax = plt.subplots(figsize=(5, 3.6))
+    barras = ax.barh(tasa.index, tasa.values * 100,
+                     color=[COLOR_RIESGO if v > 0.5 else COLOR_PRINCIPAL for v in tasa.values])
+    ax.bar_label(barras, labels=[f"{v:.0%}" for v in tasa.values], padding=3, fontsize=11)
+    ax.set_xlabel("% de pacientes con cardiopatía")
+    ax.set_xlim(0, 100)
+    ax.set_title("Cardiopatía según el tipo de dolor de pecho")
+    ax.spines[["top", "right"]].set_visible(False)
+    fig.tight_layout()
+    st.pyplot(fig)
+    plt.close(fig)
+nota(
+    "Las clases están casi balanceadas, por eso la exactitud es interpretable, aunque en salud se "
+    "prioriza el Recall. El dolor **asintomático** concentra la mayor proporción de enfermos: "
+    "un hallazgo que el modelo también aprendió (ver coeficientes)."
+)
+
+# ==============================================================================
+# 7. DESEMPEÑO DEL MODELO (todo se lee del JSON)
 # ==============================================================================
 titulo_seccion("📈 Desempeño del modelo")
 nota(
@@ -521,7 +574,7 @@ with tab_comp:
     )
 
 # ==============================================================================
-# 7. INFORMACIÓN METODOLÓGICA
+# 8. INFORMACIÓN METODOLÓGICA
 # ==============================================================================
 st.divider()
 with st.expander("ℹ️ Metodología, dataset y limitaciones"):

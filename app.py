@@ -8,6 +8,7 @@ Arquitectura:
                             generados por el notebook. La app NO contiene números escritos a mano.
 """
 
+import io
 import json
 import os
 
@@ -212,12 +213,41 @@ def titulo_seccion(texto):
     st.markdown(f'<div class="titulo">{texto}</div>', unsafe_allow_html=True)
 
 
-def mostrar_figura(fig):
-    """Muestra un gráfico centrado y con ancho moderado (evita que ocupe toda la pantalla)."""
-    _, centro, _ = st.columns([1, 2, 1])
-    with centro:
-        st.pyplot(fig)
+plt.rcParams.update({"font.size": 10, "axes.titlesize": 12, "axes.titleweight": "bold",
+                     "axes.labelsize": 10, "xtick.labelsize": 9.5, "ytick.labelsize": 9.5})
+
+
+def imagen_figura(fig, ancho):
+    """Convierte la figura en imagen de ancho fijo (px): así la letra del gráfico
+    queda proporcional al texto de la app y no crece con el ancho de la pantalla."""
+    buffer = io.BytesIO()
+    fig.savefig(buffer, format="png", dpi=150, bbox_inches="tight")
     plt.close(fig)
+    st.image(buffer, width=ancho)
+
+
+def mostrar_figura(fig, ancho=620):
+    """Muestra un gráfico centrado y de ancho moderado."""
+    _, centro, _ = st.columns([1, 3, 1])
+    with centro:
+        imagen_figura(fig, ancho)
+
+
+# Nombres legibles para los coeficientes (códigos del dataset UCI → español)
+NOMBRES_VARIABLES = {
+    "sexo": "Sexo masculino", "edad": "Edad", "presion_reposo": "Presión en reposo",
+    "colesterol": "Colesterol", "frecuencia_max": "Frecuencia cardíaca máx.",
+    "depresion_st": "Depresión del ST", "azucar_ayunas": "Glucemia > 120 mg/dl",
+    "angina_ejercicio": "Angina con ejercicio", "num_vasos_principales": "N.º de vasos principales",
+    "tipo_dolor_pecho_1.0": "Dolor: angina típica", "tipo_dolor_pecho_2.0": "Dolor: angina atípica",
+    "tipo_dolor_pecho_3.0": "Dolor: no anginoso", "tipo_dolor_pecho_4.0": "Dolor: asintomático",
+    "electro_reposo_0.0": "ECG: normal", "electro_reposo_1.0": "ECG: anomalía ST-T",
+    "electro_reposo_2.0": "ECG: hipertrofia ventricular",
+    "pendiente_st_1.0": "Pendiente ST ascendente", "pendiente_st_2.0": "Pendiente ST plana",
+    "pendiente_st_3.0": "Pendiente ST descendente",
+    "talasemia_3.0": "Perfusión: normal", "talasemia_6.0": "Perfusión: defecto fijo",
+    "talasemia_7.0": "Perfusión: defecto reversible",
+}
 
 
 def pct(valor):
@@ -449,31 +479,27 @@ nota(
 g1, g2 = st.columns(2)
 with g1:
     conteo = datos["Diagnóstico"].value_counts().reindex(["Sano", "Cardiopatía"])
-    fig, ax = plt.subplots(figsize=(5, 3.6))
+    fig, ax = plt.subplots(figsize=(5, 3.4))
     barras = ax.bar(conteo.index, conteo.values, color=[COLOR_PRINCIPAL, COLOR_RIESGO])
-    ax.bar_label(barras, labels=[f"{v} ({v / len(datos):.0%})" for v in conteo.values], fontsize=11)
+    ax.bar_label(barras, labels=[f"{v} ({v / len(datos):.0%})" for v in conteo.values])
     ax.set_ylabel("Pacientes")
     ax.set_title("Diagnóstico: clases casi balanceadas")
     ax.spines[["top", "right"]].set_visible(False)
     ax.set_ylim(0, conteo.max() * 1.18)
-    fig.tight_layout()
-    st.pyplot(fig)
-    plt.close(fig)
+    imagen_figura(fig, 480)
 with g2:
     orden = ["Angina típica", "Angina atípica", "No anginoso", "Asintomático"]
     tasa = (datos.groupby("Tipo de dolor")["Diagnóstico"].apply(lambda s: (s == "Cardiopatía").mean())
             .reindex(orden))
-    fig, ax = plt.subplots(figsize=(5, 3.6))
+    fig, ax = plt.subplots(figsize=(5, 3.4))
     barras = ax.barh(tasa.index, tasa.values * 100,
                      color=[COLOR_RIESGO if v > 0.5 else COLOR_PRINCIPAL for v in tasa.values])
-    ax.bar_label(barras, labels=[f"{v:.0%}" for v in tasa.values], padding=3, fontsize=11)
+    ax.bar_label(barras, labels=[f"{v:.0%}" for v in tasa.values], padding=3)
     ax.set_xlabel("% de pacientes con cardiopatía")
     ax.set_xlim(0, 100)
     ax.set_title("Cardiopatía según el tipo de dolor de pecho")
     ax.spines[["top", "right"]].set_visible(False)
-    fig.tight_layout()
-    st.pyplot(fig)
-    plt.close(fig)
+    imagen_figura(fig, 480)
 nota(
     "Las clases están casi balanceadas, por eso la exactitud es interpretable, aunque en salud se "
     "prioriza el Recall. El dolor **asintomático** concentra la mayor proporción de enfermos: "
@@ -515,14 +541,16 @@ tab_coef, tab_roc, tab_matriz, tab_comp = st.tabs(
 
 with tab_coef:
     coef = pd.Series(evidencias["coeficientes"]).sort_values()
-    fig, ax = plt.subplots(figsize=(7, 6))
+    coef.index = [NOMBRES_VARIABLES.get(n, n) for n in coef.index]
+    fig, ax = plt.subplots(figsize=(7, 6.2))
     ax.barh(coef.index, coef.values,
             color=[COLOR_RIESGO if v > 0 else COLOR_SANO for v in coef.values])
     ax.axvline(0, color="black", linewidth=0.8)
+    ax.set_xlim(coef.min() * 1.12, coef.max() * 1.12)
     ax.set_xlabel("Coeficiente (log-odds)   ← reduce el riesgo | aumenta el riesgo →")
     ax.set_title("Coeficientes de la Regresión Logística")
-    fig.tight_layout()
-    mostrar_figura(fig)
+    ax.spines[["top", "right"]].set_visible(False)
+    mostrar_figura(fig, 640)
     nota(
         "Rojo: aumenta el riesgo; verde: lo reduce, manteniendo constantes las demás variables. "
         "Las variables continuas están escaladas (efecto por desviación estándar) y las categorías "
@@ -542,10 +570,9 @@ with tab_roc:
     ax.set_xlabel("Tasa de falsos positivos (1 − especificidad)")
     ax.set_ylabel("Tasa de verdaderos positivos (Recall)")
     ax.set_title("Curva ROC en el conjunto de prueba")
-    ax.legend(loc="lower right")
-    ax.grid(True)
-    fig.tight_layout()
-    mostrar_figura(fig)
+    ax.legend(loc="lower right", fontsize=9)
+    ax.grid(True, alpha=0.4)
+    mostrar_figura(fig, 560)
 
 with tab_matriz:
     vn, fp = evidencias["matriz_confusion"][0]

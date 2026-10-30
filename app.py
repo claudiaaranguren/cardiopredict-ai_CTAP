@@ -34,7 +34,7 @@ st.set_page_config(
 ENLACES = {
     "📓 Notebook (Google Colab)": "https://colab.research.google.com/drive/1M5URiH0n_mBn9rKRlfk9g5zypr6Vlmij?usp=sharing",
     "💻 Repositorio (GitHub)": "https://github.com/claudiaaranguren/cardiopredict-ai_CTAP",
-    "🎥 Video de sustentación": "https://youtu.be/FbgWG-W6Ia4",
+    "🎥 Video de sustentación": "https://youtu.be/XRkx99zR0Tw",
     "📄 Póster (infografía PDF)": "https://github.com/claudiaaranguren/cardiopredict-ai_CTAP/blob/main/P%C3%B3ster_ACA_1_A3.pdf",
 }
 ARCHIVO_POSTER = "infografia.png"   # imagen del póster en el repositorio (opcional)
